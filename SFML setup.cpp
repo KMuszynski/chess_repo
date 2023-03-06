@@ -1642,7 +1642,7 @@ bool isDraw(Board board, vector<Move> previousMoves)
 void createSquarePosVec(vector<vector<sf::Vector2f>>* sqPos, Board gameBoard, sf::Sprite board)
 {
 	sf::Vector2f firstSquare(board.getPosition().x + 22, board.getPosition().y + 7);
-	sf::Vector2f a1(firstSquare.x , firstSquare.y + (81 * 7));
+	sf::Vector2f a1(firstSquare.x, firstSquare.y + (81 * 7));
 	for (int i = 0; i < 8; i++)
 	{
 		vector<sf::Vector2f> row;
@@ -1705,11 +1705,11 @@ void setTextures(vector<sf::Texture>* textures)
 				name = "king";
 			}
 
-			if (t==0)
+			if (t == 0)
 			{
 				pawnTex.loadFromFile("textures/" + name + "_white.png");
 			}
-			if (t==1)
+			if (t == 1)
 			{
 				pawnTex.loadFromFile("textures/" + name + "_black.png");
 			}
@@ -1719,8 +1719,8 @@ void setTextures(vector<sf::Texture>* textures)
 	}
 }
 
-void printBoardSFML(Board gameBoard, sf::RenderWindow &window, int turnCount, vector<pair<sf::Sprite*,
-	Position>>* curSpr, vector<vector<sf::Vector2f>> sqPos, vector<sf::Texture> textures, vector<Move> prevoiusMoves)
+void printBoardSFML(Board gameBoard, sf::RenderWindow& window, int turnCount, vector<pair<sf::Sprite*,
+	Position>>*curSpr, vector<vector<sf::Vector2f>> sqPos, vector<sf::Texture> textures, vector<Move> prevoiusMoves)
 {
 	window.clear(sf::Color::Black);
 	sf::Font font;
@@ -1791,7 +1791,7 @@ void printBoardSFML(Board gameBoard, sf::RenderWindow &window, int turnCount, ve
 				}
 				else if (gameBoard.board[i][j]->type == KNIGHT)
 				{
-					pawn.setTexture(textures[r+1]);
+					pawn.setTexture(textures[r + 1]);
 				}
 				else if (gameBoard.board[i][j]->type == BISHOP)
 				{
@@ -1810,15 +1810,15 @@ void printBoardSFML(Board gameBoard, sf::RenderWindow &window, int turnCount, ve
 					pawn.setTexture(textures[r + 5]);
 				}
 				//.setTexture(pawnTex);
-				pawn.setPosition(sqPos[i][j].x+7, sqPos[i][j].y + 5);
-				pawn.setScale(0.085f,0.085f);
+				pawn.setPosition(sqPos[i][j].x + 7, sqPos[i][j].y + 5);
+				pawn.setScale(0.085f, 0.085f);
 				window.draw(pawn);
 
 				Position pos;
 				pos.x = i;
 				pos.y = j;
 				curSpr->push_back(make_pair(&pawn, pos));
-				
+
 				sf::Sprite* p1;
 				int c = curSpr->size() - 1;
 				p1 = (*curSpr)[c].first;
@@ -1933,9 +1933,9 @@ bool sfMove(Board* gameBoard, sf::RenderWindow& window, int turnCount, vector<pa
 bool sfMovePart2(Board* gameBoard, Piece* piece, sf::RenderWindow& window, vector<vector<sf::Vector2f>> sqPos,
 	sf::Vector2f mousePos, vector<Position>* availableM, Position piecePos)
 {
-	Piece* p1;
-	p1 = gameBoard->board[piecePos.x][piecePos.y];
-	for (int i=0, n=availableM->size(); i<n; i++)
+	Piece* p1 = piece;
+
+	for (int i = 0, n = availableM->size(); i < n; i++)
 	{
 		sf::FloatRect bounds;
 		bounds.left = sqPos[(*availableM)[i].x][(*availableM)[i].y].x;
@@ -1945,9 +1945,27 @@ bool sfMovePart2(Board* gameBoard, Piece* piece, sf::RenderWindow& window, vecto
 
 		if (bounds.contains(mousePos))
 		{
+			Position pos1 = piecePos;
+			Position pos2 = (*availableM)[i];
+			p1 = gameBoard->board[piecePos.x][piecePos.y];
+			Color col = p1->color;
+
+			if (p1->type == KING)
+			{
+				if (pos2.x - pos1.x == 2) // O-O
+				{
+					gameBoard->addToBoard(ROOK, 5, pos2.y, col);
+					gameBoard->deleteFromBoard(7, pos1.y);
+				}
+				else if (pos2.x - pos1.x == -2) // O-O-O
+				{
+					gameBoard->addToBoard(ROOK, 3, pos2.y, col);
+					gameBoard->deleteFromBoard(0, pos2.y);
+				}
+			}
+
 			gameBoard->addToBoard(p1->type, (*availableM)[i].x, (*availableM)[i].y, p1->color);
 			gameBoard->deleteFromBoard(p1->p.x, p1->p.y);
-			//printBoardSFML(*gameBoard, window, turnCount, curSpr, sqPos);
 			return true;
 		}
 	}
@@ -1964,6 +1982,18 @@ int main()
 	gameBoard.fillBoard();
 	setupBoard(&gameBoard);
 	//gameBoard.deleteFromBoard(4,6);
+
+	gameBoard.fillBoard();
+	gameBoard.addToBoard(KING, 4, 7, WHITE);
+	//gameBoard.addToBoard(ROOK, 0, 7, WHITE);
+	//gameBoard.addToBoard(ROOK, 7, 7, WHITE);
+	gameBoard.addToBoard(QUEEN, 4, 6, WHITE);
+	gameBoard.addToBoard(QUEEN, 3, 6, WHITE);
+	gameBoard.addToBoard(QUEEN, 5, 6, WHITE);
+	gameBoard.addToBoard(BISHOP, 4, 1, WHITE);
+	gameBoard.addToBoard(KING, 4, 0, BLACK);
+	//gameBoard.addToBoard(ROOK, 0, 0, BLACK);
+	//gameBoard.addToBoard(ROOK, 7, 0, BLACK);
 
 	sf::RenderWindow window(sf::VideoMode(900.f, 750.f), "CHESS !!!");
 	window.setFramerateLimit(60);
@@ -1987,7 +2017,7 @@ int main()
 	printBoardSFML(gameBoard, window, turnCount, &curSpr, sqPos, textures, prevoiusMoves);
 	updateAvailableMoves(&gameBoard, prevoiusMoves);
 	vector<Position>availableM;
-	Blank b(0,0,WHITE);
+	Blank b(0, 0, WHITE);
 	Piece* cp = &b;
 	Position piecePos;
 	piecePos.x = 0; piecePos.y = 0;
@@ -1995,14 +2025,14 @@ int main()
 
 	while (window.isOpen())
 	{
-		sf:: Event event;
+		sf::Event event;
 		while (window.pollEvent(event))
 		{
 
 			if (event.type == sf::Event::Closed)
 				window.close();
 
-			
+
 			if (event.type == sf::Event::MouseButtonPressed)
 			{
 				if (event.mouseButton.button == sf::Mouse::Left && xyz)
